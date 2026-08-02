@@ -1,18 +1,28 @@
 import React from 'react'
 import { BsRobot } from 'react-icons/bs'
 import { IoSparkles } from "react-icons/io5";
-import {motion} from "motion/react"
+import { motion} from "motion/react"
 import {FcGoogle} from "react-icons/fc"
-import { signInWithPopup } from "firebase/auth"
-import {auth,provider} from "../utils/firebase.js"
+import {signInWithPopup} from "firebase/auth"
+import {auth,provider}from "../utils/firebase.js"
+import { ServerUrl } from '../App.jsx';
+import axios from "axios";
+import {setUserData} from "../redux/userSlice.js"
+
 
 function Auth() {
-  const handleAuth = async () => {
-    try {
+  const handleAuth= async ()=>{
+    try{
       const response = await signInWithPopup(auth, provider);
-      console.log("Signed in as:", response.user.email);
-    } catch (error) {
-      console.log("error:", error);
+      let User = response.user
+      let name = User.displayName
+      let email = User.email
+      const result =await axios.post(ServerUrl + "/api/auth",
+      {name,email}, {withCredentials:true})
+      console.log(result)
+
+    }catch(error){
+      console.log("error:",error);
     }
   }
   return (
