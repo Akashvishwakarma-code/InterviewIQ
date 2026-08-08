@@ -18,7 +18,7 @@ function AuthModel({ onClose }) {
             initial={{ opacity: 0, y: -20 }}
             animate={{ scale: 1.05, opacity: 1, y: 20 }}
             transition={{ duration: 0.5 }}
-            onClick={onClose} className="absolute top-8 right-4 text-gray-800 hover:text-black text-xl z-50">
+            onClick={onClose} className="absolute top-9 right-4 text-gray-800 hover:text-black text-xl z-50">
                 <FaTimes size={18} />
             </motion.button>
             <Auth isModel={true} />
