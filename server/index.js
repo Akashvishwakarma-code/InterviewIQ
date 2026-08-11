@@ -1,6 +1,9 @@
 import express from "express";
 import dotenv from "dotenv";
 import connectDb from "./config/connectDb.js";
+import dns from "dns"
+
+dns.setServers(["1.1.1.1", "8.8.8.8"]);
 dotenv.config();
 const app =express();
 const PORT= process.env.PORT||6000;
