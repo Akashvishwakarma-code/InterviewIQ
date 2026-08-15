@@ -8,6 +8,7 @@ import cors from "cors";
 import authRouter from "./routes/auth.route.js";
 import dns from "node:dns"
 import userRouter from "./routes/user.routes.js";
+import interviewRouter from "./routes/interview.route.js";
 
 dns.setServers(["1.1.1.1","8.8.8.8"])
 
@@ -24,6 +25,7 @@ app.use(cookieParser());
 
 app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
+app.user("/api/interview",interviewRouter)
 
 app.listen(PORT, () => {
     console.log("Server is working");
