@@ -1,14 +1,4 @@
-import express from "express";
-import dotenv from "dotenv";
-<<<<<<< HEAD
-import connectDb from "./config/connectDb.js";
-import dns from "dns"
-
-dns.setServers(["1.1.1.1", "8.8.8.8"]);
-=======
->>>>>>> 2cec510ac32d316cfa926dc0144b142e29e1713c
-dotenv.config();
-
+import express from "express"
 import connectDb from "./config/connectDb.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
@@ -16,8 +6,13 @@ import authRouter from "./routes/auth.route.js";
 import dns from "node:dns"
 import userRouter from "./routes/user.routes.js";
 import interviewRouter from "./routes/interview.route.js";
+import isAuth from "./middleware/isAuth.js"
 
-dns.setServers(["1.1.1.1","8.8.8.8"])
+import dotenv from "dotenv";
+
+dns.setServers(["1.1.1.1", "8.8.8.8"]);
+dotenv.config();
+
 
 const app = express();
 const PORT = process.env.PORT || 6000;
@@ -32,7 +27,7 @@ app.use(cookieParser());
 
 app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
-app.user("/api/interview",interviewRouter)
+app.use("/api/interview",interviewRouter)
 
 app.listen(PORT, () => {
     console.log("Server is working");

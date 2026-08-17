@@ -1,6 +1,6 @@
 import fs from "fs"
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs"
-import { askAi } from "../services/openRouter.servicesjs";
+import { askAi } from "../services/openRouter.services.js";
 
 export const analyzeResume = async (req,res) =>{
     try{

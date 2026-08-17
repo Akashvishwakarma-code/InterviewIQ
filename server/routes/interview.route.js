@@ -1,6 +1,6 @@
 import express from "express"
-import isAuth from "../middlewares/isAuth.js"
-import {upload} from "../middlewares/multer.js"
+import isAuth from "../middleware/isAuth.js"
+import {upload} from "../middleware/multer.js"
 import { analyzeResume } from "../controllers/interview.controller.js"
 
 const interviewRouter = express.Router()
