@@ -79,49 +79,50 @@ export const analyzeResume = async (req, res) => {
 }
 
 
-export const generateQuestion = async ( req, res) => {
-    try{
-        const { role, experience, mode, resumeText, projects, skills} = req.body
-        
-        role=role?.trim();
-        experience =experience?.trim();
+export const generateQuestion = async (req, res) => {
+    try {
+        let { role, experience, mode, resumeText, projects, skills } = req.body;
+
+        role = role?.trim();
+        experience = experience?.trim();
         mode = mode?.trim();
 
-        if(!role || experience || !mode){
-            return res.status(400).json({message:"Role, Experience and Mode are required."})
-        }
-        const user = await User.findById(req.userId)
-
-        if(!user){
-            return res.status(404).json({
-                message:"User not found."
-            })
+        if (!role || !experience || !mode) {
+            return res.status(400).json({ message: "Role, Experience and Mode are required." });
         }
 
-        if(user.credits < 50){
+        const user = await User.findById(req.userId);
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found." });
+        }
+
+        if (user.credits < 50) {
             return res.status(400).json({
-                message:"Not enough credits.Minimum 50 required."
-            })
+                message: "Not enough credits.Minimum 50 required."
+            });
         }
-        
-        const projectText = Array.isArray(projects) && skills.length ? skills.join(", "):"None";
-        const safeResume =resumeText?.trim() || "None";
+
+        const projectText = Array.isArray(projects) && projects.length ? projects.join(", ") : "None";
+        const skillsText = Array.isArray(skills) && skills.length ? skills.join(", ") : "None";
+        const safeResume = resumeText?.trim() || "None";
 
         const userPrompt = `
         Role:${role}
         Experience:${experience}
         InterviewMode:${mode}
         Projects:${projectText}
-        Skills:{skillsText}
+        Skills:${skillsText}
         Resume:${safeResume}`;
 
         if (!userPrompt.trim()) {
-            return res.status(400).json({message:"Prompt content is empty."});
+            return res.status(400).json({ message: "Prompt content is empty." });
         }
-        const messages=[
+
+        const messages = [
             {
-                role:"system",
-                content:` 
+                role: "system",
+                content: `
                 You are a real human interviewer conducting a professional interview.
 
                 Speak in simple, natural English as if you are directly talking to the candidate.
@@ -141,7 +142,7 @@ export const generateQuestion = async ( req, res) => {
                 Difficulty progression:
                 Question 1 -> easy
                 Question 2 -> easy
-                Question 3 -> medium 
+                Question 3 -> medium
                 Question 4 -> medium
                 Question 5 -> hard
 
@@ -149,21 +150,20 @@ export const generateQuestion = async ( req, res) => {
                 `
             },
             {
-                role:"user",
-                content:userPrompt
+                role: "user",
+                content: userPrompt
             }
         ];
 
+        const aiResponse = await askAi(messages);
         const questionArray = aiResponse
-        .split("\n")
-        .map(q => q.trim())
-        .filter(q => q.length > 0)
-        .slice(0, 5);
+            .split("\n")
+            .map(q => q.trim())
+            .filter(q => q.length > 0)
+            .slice(0, 5);
 
-        if (questionArray.length === 0){
-            return res.status(500).json({
-                message:"AI failed to generate questions."
-            });
+        if (questionArray.length === 0) {
+            return res.status(500).json({ message: "AI failed to generate questions." });
         }
 
         user.credits -= 50;
@@ -174,40 +174,47 @@ export const generateQuestion = async ( req, res) => {
             role,
             experience,
             mode,
-            resumeText:safeResume,
-            questions: questionArray.map((q,index) => ({
-                question :q,
-                difficulty:["easy","easy","medium","medium","hard"][index],
-                timeLimit: [60,60,90,90,120][index],
+            resumeText: safeResume,
+            questions: questionArray.map((q, index) => ({
+                question: q,
+                difficulty: ["easy", "easy", "medium", "medium", "hard"][index],
+                timeLimit: [60, 60, 90, 90, 120][index],
             }))
-        })
+        });
 
-        res.json({
+        return res.json({
             interviewId: interview._id,
             creditsLeft: user.credits,
             userName: user.name,
             questions: interview.questions
         });
-    }catch(error){
-        return res.status(500).json({message:`failed to submit answer ${error}`})
+    } catch (error) {
+        return res.status(500).json({ message: `failed to generate interview questions ${error.message || error}` });
     }
-}
+};
 
 export const submitAnswer = async (req, res) => {
-    try{
-        const { interviewId, questionIndex, answer, timeTaken } = req.body
+    try {
+        let { interviewId, questionIndex, answer, timeTaken } = req.body;
 
-        const interview = await Interview.findById(interviewId)
-        const question = interview.question[questionIndex]
-        
-        //if no answer 
+        const interview = await Interview.findById(interviewId);
+        if (!interview) {
+            return res.status(404).json({ message: "Interview not found." });
+        }
+
+        const question = interview.questions?.[questionIndex];
+        if (!question) {
+            return res.status(400).json({ message: "Question not found." });
+        }
+
+        //if no answer
         if (!answer) {
             question.score = 0;
             question.feedback = "You did not submit an answer .";
             question.answer = "";
 
             await interview.save();
-            
+
             return res.json({
                 feedback: question.feedback
             });
@@ -300,41 +307,60 @@ export const submitAnswer = async (req, res) => {
 }
 
 export const finishInterview = async (req, res) => {
-    try{
-        const {interviewId} = req.body
-        const interview = await Interview.findById(interviewId)
-        if (!interview){
-            return res.status(400).json({message:"failed to find Interview"})
+    try {
+        let { interviewId } = req.body;
+        const interview = await Interview.findById(interviewId);
+        if (!interview) {
+            return res.status(400).json({ message: "failed to find Interview" });
         }
-        const totalQuestions = interview.questins.length;
+
+        const totalQuestions = interview.questions?.length || 0;
 
         let totalScore = 0;
         let totalConfidence = 0;
         let totalCommunication = 0;
-        let totalCorrections = 0;
+        let totalCorrectness = 0;
 
         interview.questions.forEach((q) => {
             totalScore += q.score || 0;
-            totalConfidence += q.communication || 0;
+            totalConfidence += q.confidence || 0;
             totalCommunication += q.communication || 0;
-            totalCorrectionness += q.correctness || 0;
-
+            totalCorrectness += q.correctness || 0;
         });
 
         const finalScore = totalQuestions
-        ? totalScore / totalQuestions
-        : 0;
+            ? totalScore / totalQuestions
+            : 0;
 
         const avgConfidence = totalQuestions
-        ? totalConfidence / totalQuestions
-        : 0;
+            ? totalConfidence / totalQuestions
+            : 0;
 
         const avgCommunication = totalQuestions
-        ? totalCorrectness / totalQuestions 
-        : 0;
+            ? totalCommunication / totalQuestions
+            : 0;
 
-        tot
-    }catch(error){
+        const avgCorrectness = totalQuestions
+            ? totalCorrectness / totalQuestions
+            : 0;
 
+        await interview.save();
+
+        return res.status(200).json({
+            finalScore: Number(finalScore.toFixed(1)),
+            confidence: Number(avgConfidence.toFixed(1)),
+            communication: Number(avgCommunication.toFixed(1)),
+            correctness: Number(avgCorrectness.toFixed(1)),
+            questionWiseScore: interview.questions.map((q) => ({
+                question: q.question,
+                score: q.score || 0,
+                feedback: q.feedback || "",
+                confidence: q.confidence || 0,
+                communication: q.communication || 0,
+                correctness: q.correctness || 0,
+            })),
+        });
+    } catch (error) {
+        return res.status(500).json({ message: `failed to finish Interview ${error}` });
     }
-}
+};
