@@ -7,6 +7,7 @@ import { FaMicrophone, FaMicrophoneSlash } from "react-icons/fa"
 
 function Step2Interview({ interviewData, onFinish }) {
   const questions = interviewData?.questions || []
+  const userName = interviewData?.userName || "there"
 
   const [isIntroPhase, setIsIntroPhase] = useState(true)
   const [isMicon, setIsMicon] = useState(true)
@@ -22,7 +23,7 @@ function Step2Interview({ interviewData, onFinish }) {
   const [subtitle, setSubtitle] = useState("")
 
   const videoRef = useRef(null)
-
+  const hasQuestions = questions.length > 0
   const currentQuestion = questions[currentIndex]
   
   useEffect(() => {
@@ -48,7 +49,7 @@ function Step2Interview({ interviewData, onFinish }) {
         voices.find(v =>
           v.name.toLowerCase().includes("david") ||
           v.name.toLowerCase().includes("mark") ||
-          v.name.toLowerCase().include("male")
+          v.name.toLowerCase().includes("male")
         );
 
         if (maleVoice) {
@@ -69,23 +70,21 @@ function Step2Interview({ interviewData, onFinish }) {
 
   const speakText = (text) => {
     return new Promise((resolve) => {
-      if (!window.speechSynthesis || !selectedVoice){
+      if (!window.speechSynthesis || !selectedVoice) {
         resolve();
         return;
       }
+
       window.speechSynthesis.cancel();
 
-      //Add natural pauses after commas and periods
       const humanText = text
-      .replace(/,/g, ", ...")
-      .replace(/\./g, ". ...");
+        .replace(/,/g, ", ...")
+        .replace(/\./g, ". ...");
 
       const utterance = new SpeechSynthesisUtterance(humanText);
       utterance.voice = selectedVoice;
-
-      //Human-like pacing 
-      utterance.rate = 0.92; // slightly slower than normal
-      utterance.pitch = 1.05; // small warmth
+      utterance.rate = 0.92;
+      utterance.pitch = 1.05;
       utterance.volume = 1;
 
       utterance.onstart = () => {
@@ -95,7 +94,9 @@ function Step2Interview({ interviewData, onFinish }) {
 
       utterance.onend = () => {
         videoRef.current?.pause();
-        videoRef.current.currentTime = 0;
+        if (videoRef.current) {
+          videoRef.current.currentTime = 0;
+        }
         setIsAiPlaying(false);
 
         setTimeout(() => {
@@ -104,36 +105,52 @@ function Step2Interview({ interviewData, onFinish }) {
         }, 300);
       };
 
+      utterance.onerror = () => {
+        setIsAiPlaying(false);
+        setTimeout(() => {
+          setSubtitle("");
+          resolve();
+        }, 300);
+      };
+
+      window.speechSynthesis.speak(utterance);
     })
   };
 
   useEffect(() => {
-    if(!selectedVoice){
-      return;
+    if (!selectedVoice) {
+      if (hasQuestions) {
+        const fallbackTimer = setTimeout(() => setIsIntroPhase(false), 300)
+        return () => clearTimeout(fallbackTimer)
+      }
+      return
     }
+
     const runIntro = async () => {
-      if(isIntroPhase){
+      if (isIntroPhase) {
         await speakText(
           `Hi ${userName}, it's great to meet you today. I hope you're feeling confident and ready.`
-        );
+        )
 
         await speakText(
           "I'll ask you a few questions. Just answer naturally, and take your time. Let's begin."
-        );
+        )
         setIsIntroPhase(false)
-      }else if (currentQuestion){
-        await new Promise(r => setTimeout(r, 800));
+      } else if (currentQuestion) {
+        await new Promise(r => setTimeout(r, 800))
 
-        //If last question (hard level)
-        if(currentIndex === questions.length - 1){
-          await speakText("Alright, this one might be a bit more challenging.");
+        if (currentIndex === questions.length - 1) {
+          await speakText("Alright, this one might be a bit more challenging.")
         }
       }
 
-      await speakText(currentQuestion.question);
+      if (currentQuestion) {
+        await speakText(currentQuestion.question)
+      }
     }
+
     runIntro()
-  },[selectedVoice , isIntroPhase, currentIndex])
+  }, [selectedVoice, isIntroPhase, currentIndex, currentQuestion, hasQuestions, questions.length, userName])
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-100 flex items-center justify-center p-3 sm:p-5">
       <div className="w-full max-w-[1320px] h-[78vh] min-h-[620px] bg-white rounded-3xl overflow-hidden border border-gray-200 shadow-xl flex flex-col lg:flex-row">
@@ -194,43 +211,45 @@ function Step2Interview({ interviewData, onFinish }) {
             </h2>
           </div>
 
-          <div className="space-y-3">
-            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200 shadow-sm">
-              <p className="text-xs sm:text-sm text-gray-400 mb-2">
-                Question {currentIndex + 1 } of {questions.length}
-              </p>
-              <div className="text-base sm:text-lg font-semibold text-gray-800 leading-relaxed">
-                {currentQuestion?.question}
+          {hasQuestions && (
+            <div className="space-y-3">
+              <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200 shadow-sm">
+                <p className="text-xs sm:text-sm text-gray-400 mb-2">
+                  Question {currentIndex + 1} of {questions.length}
+                </p>
+                <div className="text-base sm:text-lg font-semibold text-gray-800 leading-relaxed">
+                  {currentQuestion?.question || "Loading question..."}
+                </div>
+              </div>
+
+              <div className="bg-white p-3 sm:p-4 rounded-2xl border border-gray-200 shadow-sm">
+                <textarea
+                  placeholder="Type your answer here..."
+                  className="w-full min-h-[220px] resize-none rounded-2xl border border-gray-200 bg-gray-50 p-4 text-gray-800 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition"
+                />
+              </div>
+
+              <div className="bg-white p-3 sm:p-4 rounded-2xl border border-gray-200 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-full bg-black text-white shadow-lg"
+                    type="button"
+                  >
+                    <FaMicrophone size={20} />
+                  </motion.button>
+
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-500 text-white py-3 rounded-2xl shadow-lg hover:opacity-90 transition font-semibold"
+                    type="button"
+                  >
+                    Submit Answer
+                  </motion.button>
+                </div>
               </div>
             </div>
-
-            <div className="bg-white p-3 sm:p-4 rounded-2xl border border-gray-200 shadow-sm">
-              <textarea
-                placeholder="Type your answer here..."
-                className="w-full min-h-[220px] resize-none rounded-2xl border border-gray-200 bg-gray-50 p-4 text-gray-800 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition"
-              />
-            </div>
-
-            <div className="bg-white p-3 sm:p-4 rounded-2xl border border-gray-200 shadow-sm">
-              <div className="flex items-center gap-3">
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
-                  className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-full bg-black text-white shadow-lg"
-                  type="button"
-                >
-                  <FaMicrophone size={20} />
-                </motion.button>
-
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
-                  className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-500 text-white py-3 rounded-2xl shadow-lg hover:opacity-90 transition font-semibold"
-                  type="button"
-                >
-                  Submit Answer
-                </motion.button>
-              </div>
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
