@@ -297,6 +297,8 @@ useEffect(() => {
       recognitionRef.current.stop();
       recognitionRef.current.abort();
     }
+
+    window.speechSynthesis.cancel();
   }
 },[]);
   return (
