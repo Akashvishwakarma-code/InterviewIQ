@@ -4,13 +4,18 @@ import femaleVideo from "../assets/videos/female-ai.mp4"
 import Timer from './Timer.jsx'
 import { motion } from "motion/react"
 import { FaMicrophone, FaMicrophoneSlash } from "react-icons/fa"
+import {BsArrowRight} from "react-icons/bs"
+import axios from "axios";
+
+const ServerUrl = "http://localhost:8000"
 
 function Step2Interview({ interviewData, onFinish }) {
   const questions = interviewData?.questions || []
   const userName = interviewData?.userName || "there"
+  const interviewId = interviewData?.interviewId
 
   const [isIntroPhase, setIsIntroPhase] = useState(true)
-  const [isMicon, setIsMicon] = useState(true)
+  const [isMicOn, setIsMicOn] = useState(true);
   const recognitionRef = useRef(null)
   const [isAiPlaying, setIsAiPlaying] = useState(false)
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -19,6 +24,7 @@ function Step2Interview({ interviewData, onFinish }) {
   const [timeLeft, setTimeLeft] = useState(questions[0]?.timeLimit || 60)
   const [selectedVoice, setSelectedVoice] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isAdvancing, setIsAdvancing] = useState(false)
   const [voiceGender, setVoiceGender] = useState("female")
   const [subtitle, setSubtitle] = useState("")
 
@@ -63,7 +69,7 @@ function Step2Interview({ interviewData, onFinish }) {
 
     };
     loadVoices();
-    window.speechSynthesis.onVoicechanged = loadVoices;
+    window.speechSynthesis.onvoiceschanged = loadVoices;
   },[])
 
   const videoSource = voiceGender === "male" ? maleVideo : femaleVideo ;
@@ -89,6 +95,7 @@ function Step2Interview({ interviewData, onFinish }) {
 
       utterance.onstart = () => {
         setIsAiPlaying(true);
+        stopMic();
         videoRef.current?.play();
       };
 
@@ -98,6 +105,10 @@ function Step2Interview({ interviewData, onFinish }) {
           videoRef.current.currentTime = 0;
         }
         setIsAiPlaying(false);
+
+        if(isMicOn) {
+          startMic();
+        };
 
         setTimeout(() => {
           setSubtitle("");
@@ -118,13 +129,7 @@ function Step2Interview({ interviewData, onFinish }) {
   };
 
   useEffect(() => {
-    if (!selectedVoice) {
-      if (hasQuestions) {
-        const fallbackTimer = setTimeout(() => setIsIntroPhase(false), 300)
-        return () => clearTimeout(fallbackTimer)
-      }
-      return
-    }
+    if (!selectedVoice) return
 
     const runIntro = async () => {
       if (isIntroPhase) {
@@ -145,12 +150,155 @@ function Step2Interview({ interviewData, onFinish }) {
       }
 
       if (currentQuestion) {
-        await speakText(currentQuestion.question)
+        await speakText(currentQuestion.question);
+
+        if(isMicOn) {
+          startMic();
+        }
       }
     }
 
     runIntro()
   }, [selectedVoice, isIntroPhase, currentIndex, currentQuestion, hasQuestions, questions.length, userName])
+
+  useEffect(()=>{
+    if(isIntroPhase) return ;
+    if(!currentQuestion) return ;
+    if(isSubmitting || feedback) return ;
+    const timer = setInterval(() => {
+      setTimeLeft((prev)=>{
+        if(prev <= 1){
+          clearInterval(timer)
+          return 0;
+        }
+        return prev -1
+      })
+    }, 1000)
+
+    return () => clearInterval(timer)
+  },[isIntroPhase, currentIndex, isSubmitting, feedback, currentQuestion])
+
+ useEffect(()=>{
+  if (!("webkitSpeechRecognition" in window )) return ;
+  
+  const recognition = new window.webkitSpeechRecognition();
+  recognition.lang = "en-US";
+  recognition.continuous = true;
+  recognition.interimResults = false;
+
+  recognition.onresult = (event) =>{
+    const transcript =
+      event.results[event.results.length - 1] [0].transcript;
+
+    setAnswer((prev)=> prev + " " + transcript);
+
+  };
+  recognitionRef.current = recognition;
+
+ },[])
+
+ const startMic = () => {
+  if( recognitionRef.current && !isAiPlaying ) {
+    try{
+      recognitionRef.current.start();
+    }catch{ }
+  }
+ };
+
+ const stopMic = () => {
+  if(recognitionRef.current) {
+    recognitionRef.current.stop();
+  }
+ };
+
+ const toggleMic = () => {
+  if(isMicOn){
+    stopMic();
+  }else{
+    startMic();
+  }
+  setIsMicOn(!isMicOn);
+ };
+
+ const submitAnswer = async () => {
+  if(isSubmitting) return ;
+  stopMic()
+  setIsSubmitting(true)
+
+  try {
+    const result = await axios.post(ServerUrl + "/api/interview/submit-answer" , { 
+      interviewId,
+      questionIndex : currentIndex,
+      answer, 
+      timeTaken: 
+      currentQuestion.timeLimit - timeLeft,
+    },{withCredentials: true})
+    setFeedback(result.data.feedback)
+    speakText(result.data.feedback)
+    setIsSubmitting(false)
+  }catch(error){
+    console.log(error)
+    setIsSubmitting(false)
+  }
+ }
+
+const handleNext = async () => {
+  if (isAdvancing) return;
+  setIsAdvancing(true);
+
+  try {
+    if (currentIndex + 1 >= questions.length) {
+      await finishInterview();
+      return;
+    }
+
+    await speakText("Alright, let's move to the next question.");
+
+    const nextIndex = currentIndex + 1;
+    setAnswer("");
+    setFeedback("");
+    setTimeLeft(questions[nextIndex]?.timeLimit || 60);
+    setCurrentIndex(nextIndex);
+  } finally {
+    setIsAdvancing(false);
+  }
+}
+
+const finishInterview = async () => {
+  stopMic()
+  setIsMicOn(false)
+  try{
+    const result = await axios.post(ServerUrl + "/api/interview/finish",{
+      interviewId}, {withCredentials:true
+    })
+    console.log(result.data)
+    onFinish(result.data)
+  }catch(error){
+    console.log(error)
+  }
+}
+
+useEffect(() => {
+  if (isIntroPhase) return ;
+  if (!currentQuestion) return ;
+
+  if (timeLeft !== 0 || isSubmitting || feedback) return;
+
+  const timeout = setTimeout(() => {
+    submitAnswer();
+  }, 0);
+
+  return () => clearTimeout(timeout);
+}, [timeLeft, isSubmitting, feedback, isIntroPhase, currentQuestion, submitAnswer]);
+
+useEffect(() => {
+  return ()  => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current.abort();
+    }
+  }
+},[]);
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-100 flex items-center justify-center p-3 sm:p-5">
       <div className="w-full max-w-[1320px] h-[78vh] min-h-[620px] bg-white rounded-3xl overflow-hidden border border-gray-200 shadow-xl flex flex-col lg:flex-row">
@@ -184,7 +332,7 @@ function Step2Interview({ interviewData, onFinish }) {
             <div className="h-px bg-gray-200"></div>
 
             <div className="flex justify-center">
-              <Timer timeLeft="30" totalTime="60" />
+              <Timer timeLeft={timeLeft} totalTime={currentQuestion?.timeLimit || 60 } />
             </div>
 
             <div className="h-px bg-gray-200"></div>
@@ -225,28 +373,52 @@ function Step2Interview({ interviewData, onFinish }) {
               <div className="bg-white p-3 sm:p-4 rounded-2xl border border-gray-200 shadow-sm">
                 <textarea
                   placeholder="Type your answer here..."
+                  onChange={(e)=>setAnswer(e.target.value)}
+                  value={answer}
                   className="w-full min-h-[220px] resize-none rounded-2xl border border-gray-200 bg-gray-50 p-4 text-gray-800 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition"
                 />
               </div>
 
               <div className="bg-white p-3 sm:p-4 rounded-2xl border border-gray-200 shadow-sm">
-                <div className="flex items-center gap-3">
+               {!feedback ? (<div className="flex items-center gap-3">
                   <motion.button
                     whileTap={{ scale: 0.9 }}
                     className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-full bg-black text-white shadow-lg"
                     type="button"
                   >
-                    <FaMicrophone size={20} />
+                    {isMicOn ? <FaMicrophone size={20} />: <FaMicrophoneSlash size={20} />}
                   </motion.button>
 
                   <motion.button
+                  onClick={submitAnswer}
+                  disabled={isSubmitting}
                     whileTap={{ scale: 0.95 }}
-                    className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-500 text-white py-3 rounded-2xl shadow-lg hover:opacity-90 transition font-semibold"
+                    className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-500 text-white py-3 rounded-2xl shadow-lg hover:opacity-90 transition font-semibold disabled: bg-gray-500"
                     type="button"
                   >
-                    Submit Answer
+                   {isSubmitting ? "Submitting.....":"Submit Answer"}
                   </motion.button>
-                </div>
+                </div>):(
+                  <motion.div
+                    className="mt-6 bg-emerald-50 border border-emerald-200 p-5 rounded-2xl shadow-sm">
+                    <p className="text-emerald-700 font-medim mb-4 ">{feedback}</p>
+                    <motion.button
+                      type="button"
+                      onClick={handleNext}
+                      disabled={isAdvancing}
+                      whileHover={!isAdvancing ? { scale: 1.02 } : undefined}
+                      whileTap={!isAdvancing ? { scale: 0.98 } : undefined}
+                      className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 px-5 py-3.5 font-semibold text-white shadow-lg shadow-emerald-600/20 transition hover:from-emerald-700 hover:to-teal-600 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-300 disabled:cursor-wait disabled:opacity-70"
+                    >
+                      {isAdvancing
+                        ? "Loading..."
+                        : currentIndex + 1 >= questions.length
+                          ? "Finish Interview"
+                          : "Next Question"}
+                      {!isAdvancing && <BsArrowRight size={18} aria-hidden="true" />}
+                    </motion.button>
+                  </motion.div>
+                )}
               </div>
             </div>
           )}
