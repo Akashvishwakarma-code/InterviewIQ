@@ -2,8 +2,10 @@ import axios from 'axios'
 import { useEffect, useState } from 'react'
 import { ServerUrl } from '../App'
 import { FaArrowLeft } from 'react-icons/fa'
+import { useNavigate } from 'react-router-dom'
 
 function InterviewHistory() {
+    const navigate = useNavigate();
     const [interviews, setInterviews] = useState([])
     const [isLoading, setIsLoading] = useState(true)
     const [errorMessage, setErrorMessage] = useState('')
@@ -26,7 +28,7 @@ function InterviewHistory() {
     <div className="min-h-screen bg-linear-to-br from-gray-50 to-emerald py-10">
         <div className="w-[90w] lg:w-[70vw] max-w-[90%] mx-auto">
             <div className="mb-10 w-full flex items-start gap-4">
-                <button className="mt-1 p-3 rounded-full bg-white shadow hover:shadow-md transition"><FaArrowLeft className="text-gray-600" /></button>
+                <button className="mt-1 p-3 rounded-full bg-white shadow hover:shadow-md transition"><FaArrowLeft onClick={()=>navigate("/")} className="text-gray-600" /></button>
                 <div>
                     <h1 className="text-3xl font-bold text-gray-800">Interview History</h1>
                     <p className="text-gray-500 mt-2">Track your past interviews and performance reports</p>
@@ -39,8 +41,12 @@ function InterviewHistory() {
             </div> : <div className="grid gap-6">
                 
                 {interviews.map((item,index)=>(<div key={index} className="bg-white p-6 rounded-2xl shadow-md hover:shadow transition-all duration-300 cursor-pointer border border-gray-100">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div
+                        key={index}
+                        onClick={() => navigate(`/report/${item._id}`)}
+                        className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                         <div>
+                            
                             <h3 className="text-lg font-semibold text-gray-800">{item.role}</h3>
                             <p className="text-gray-500 text-sm mt-1">
                                 {item.experience} . {item.mode}

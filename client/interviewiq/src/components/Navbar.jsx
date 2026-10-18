@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { motion } from "motion/react"
 import { BsCoin, BsRobot } from 'react-icons/bs'
 import { FaUserAstronaut } from "react-icons/fa"
@@ -64,7 +64,7 @@ function Navbar() {
                             <p className="text-sm text-gray-600 mb-4">
                                 Need more Credits to continue Interviews?
                             </p>
-                            <button onClick={() => navigate("pricing")} className="w-full bg-black text-white py-2 rounded-lg text-sm">Buy more Credits</button>
+                            <button onClick={() => navigate("/pricing")} className="w-full bg-black text-white py-2 rounded-lg text-sm">Buy more Credits</button>
                          </div>
                     )}
                 </div>
