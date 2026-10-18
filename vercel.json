@@ -1,0 +1,11 @@
+{
+  "buildCommand": "cd client/interviewiq && npm install && npm run build",
+  "outputDirectory": "client/interviewiq/dist",
+  "framework": "vite",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
