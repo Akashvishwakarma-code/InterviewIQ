@@ -9,7 +9,7 @@ import InterviewReport from './pages/InterviewReport.jsx'
 import Pricing from './pages/Pricing.jsx'
 import { useDispatch } from 'react-redux'
 import { setUserData } from "./redux/userSlice.js"
-export const ServerUrl = "http://localhost:8000"
+export const ServerUrl = "https://interviewiq-ak.onrender.com"
 
 function App() {
   const dispatch =useDispatch()
