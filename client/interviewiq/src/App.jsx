@@ -6,7 +6,7 @@ import axios from "axios"
 import InterviewPage from "../src/pages/InterviewPage.jsx"
 import InterviewHistory from './pages/InterviewHistory.jsx'
 import InterviewReport from './pages/InterviewReport.jsx'
-import Pricing from './pages/Pricing.jsx'
+import Pricing from './pages/pricing.jsx'
 import { useDispatch } from 'react-redux'
 import { setUserData } from "./redux/userSlice.js"
 export const ServerUrl = "https://interviewiq-ak.onrender.com"
