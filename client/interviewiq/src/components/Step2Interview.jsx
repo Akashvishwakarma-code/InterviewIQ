@@ -301,11 +301,11 @@ useEffect(() => {
   }
 },[]);
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-100 flex items-center justify-center p-3 sm:p-5">
-      <div className="w-full max-w-[1320px] h-[78vh] min-h-[620px] bg-white rounded-3xl overflow-hidden border border-gray-200 shadow-xl flex flex-col lg:flex-row">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-100 flex items-start lg:items-center justify-center p-2 sm:p-4 md:p-6">
+      <div className="w-full max-w-[1320px] h-auto lg:h-[86vh] lg:min-h-[640px] bg-white rounded-2xl sm:rounded-3xl border border-gray-200 shadow-xl flex flex-col lg:flex-row overflow-hidden my-auto">
         {/* Left panel: video + status */}
-        <div className="w-full lg:w-[38%] bg-white p-3 sm:p-4 border-r-2 border-black flex flex-col gap-3">
-          <div className="w-full overflow-hidden rounded-3xl bg-black">
+        <div className="w-full lg:w-[380px] xl:w-[420px] bg-white p-3 sm:p-4 border-b lg:border-b-0 lg:border-r border-gray-200 flex flex-col gap-3 shrink-0 lg:overflow-y-auto">
+          <div className="w-full overflow-hidden rounded-2xl sm:rounded-3xl bg-black">
             <video
               src={videoSource}
               key={videoSource} 
@@ -313,103 +313,125 @@ useEffect(() => {
               muted
               playsInline
               preload="auto"
-              className="w-full h-[220px] sm:h-[260px] lg:h-[300px] object-cover"
+              className="w-full h-[180px] sm:h-[220px] lg:h-[280px] object-cover"
             />
           </div>
 
-          { /* subtitle */}
-          { subtitle && (
-            <div className="w-full max-w-md bg-gray-50 border border-gray-200 rounded-xl p-4 shadow-sm">
-              <p className="text-gray-700 text-sm sm:text-base font-medium text-center leading-relaxed">{subtitle}</p>
+          {/* Subtitle */}
+          {subtitle && (
+            <div className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 shadow-sm">
+              <p className="text-gray-700 text-xs sm:text-sm font-medium text-center leading-relaxed">{subtitle}</p>
             </div>
           )}
 
-          <div className="w-full bg-white border border-gray-200 rounded-2xl shadow-md p-4 sm:p-5 space-y-4">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-500">Interview Status</span>
-              {isAiPlaying && <span className="text-sm font-semibold text-emerald-600">{isAiPlaying ? "AI Speaking " :""}</span>}
+          {/* Status card */}
+          <div className="w-full bg-white border border-gray-200 rounded-2xl shadow-sm p-3 sm:p-4 space-y-3">
+            <div className="flex justify-between items-center text-xs sm:text-sm">
+              <span className="text-gray-500 font-medium">Interview Status</span>
+              <span className="font-semibold text-emerald-600">
+                {isAiPlaying ? "AI Speaking..." : "Your Turn"}
+              </span>
             </div>
 
-            <div className="h-px bg-gray-200"></div>
+            <div className="h-px bg-gray-100"></div>
 
-            <div className="flex justify-center">
-              <Timer timeLeft={timeLeft} totalTime={currentQuestion?.timeLimit || 60 } />
-            </div>
-
-            <div className="h-px bg-gray-200"></div>
-
-            <div className="grid grid-cols-2 gap-4 text-center">
+            <div className="flex items-center justify-around gap-2">
               <div className="flex flex-col items-center gap-1">
-                <span className="text-2xl font-bold text-emerald-600">{currentIndex + 1}</span>
-                <span className="text-xs text-gray-400">Current Question</span>
+                <Timer timeLeft={timeLeft} totalTime={currentQuestion?.timeLimit || 60} />
+                <span className="text-[11px] text-gray-400 font-medium">Time Left</span>
               </div>
 
-              <div className="flex flex-col items-center gap-1">
-                <span className="text-2xl font-bold text-emerald-600">{questions.length}</span>
-                <span className="text-xs text-gray-400">Total Questions</span>
+              <div className="h-10 w-px bg-gray-200"></div>
+
+              <div className="flex items-center gap-4 text-center">
+                <div className="flex flex-col items-center">
+                  <span className="text-xl sm:text-2xl font-bold text-emerald-600">{currentIndex + 1}</span>
+                  <span className="text-[10px] sm:text-xs text-gray-400">Current</span>
+                </div>
+                <span className="text-gray-300 text-lg font-light">/</span>
+                <div className="flex flex-col items-center">
+                  <span className="text-xl sm:text-2xl font-bold text-gray-700">{questions.length}</span>
+                  <span className="text-[10px] sm:text-xs text-gray-400">Total</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Right panel: interview content */}
-        <div className="flex-1 flex flex-col p-4 sm:p-5 md:p-6 relative bg-gray-50/40">
-          <div className="mb-4">
-            <h2 className="text-xl sm:text-2xl font-semibold text-emerald-600">
+        {/* Right panel: interview content (question, textarea, controls) */}
+        <div className="w-full flex-1 flex flex-col p-3 sm:p-5 md:p-6 bg-gray-50/50 lg:overflow-y-auto">
+          <div className="flex justify-between items-center mb-3">
+            <h2 className="text-lg sm:text-2xl font-bold text-emerald-700">
               AI Smart Interview
             </h2>
+            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700">
+              Question {currentIndex + 1} of {questions.length}
+            </span>
           </div>
 
           {hasQuestions && (
-            <div className="space-y-3">
-              <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200 shadow-sm">
-                <p className="text-xs sm:text-sm text-gray-400 mb-2">
-                  Question {currentIndex + 1} of {questions.length}
+            <div className="flex-1 flex flex-col gap-3">
+              {/* Question display */}
+              <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-gray-200 shadow-sm">
+                <p className="text-xs text-gray-400 uppercase tracking-wider font-medium mb-1">
+                  Question
                 </p>
-                <div className="text-base sm:text-lg font-semibold text-gray-800 leading-relaxed">
+                <div className="text-sm sm:text-base md:text-lg font-semibold text-gray-800 leading-relaxed">
                   {currentQuestion?.question || "Loading question..."}
                 </div>
               </div>
 
-              <div className="bg-white p-3 sm:p-4 rounded-2xl border border-gray-200 shadow-sm">
+              {/* Answer input */}
+              <div className="bg-white p-3 sm:p-4 rounded-2xl border border-gray-200 shadow-sm flex-1 flex flex-col">
                 <textarea
-                  placeholder="Type your answer here..."
-                  onChange={(e)=>setAnswer(e.target.value)}
+                  placeholder="Type or speak your answer here..."
+                  onChange={(e) => setAnswer(e.target.value)}
                   value={answer}
-                  className="w-full min-h-[220px] resize-none rounded-2xl border border-gray-200 bg-gray-50 p-4 text-gray-800 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition"
+                  className="w-full min-h-[140px] sm:min-h-[180px] lg:min-h-[220px] resize-y rounded-xl sm:rounded-2xl border border-gray-200 bg-gray-50 p-3 sm:p-4 text-sm sm:text-base text-gray-800 outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-200 transition"
                 />
               </div>
 
+              {/* Controls: mic + submit / feedback */}
               <div className="bg-white p-3 sm:p-4 rounded-2xl border border-gray-200 shadow-sm">
-               {!feedback ? (<div className="flex items-center gap-3">
-                  <motion.button
-                    whileTap={{ scale: 0.9 }}
-                    className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-full bg-black text-white shadow-lg"
-                    type="button"
-                  >
-                    {isMicOn ? <FaMicrophone size={20} />: <FaMicrophoneSlash size={20} />}
-                  </motion.button>
+                {!feedback ? (
+                  <div className="flex items-center gap-3">
+                    <motion.button
+                      whileTap={{ scale: 0.9 }}
+                      onClick={toggleMic}
+                      className={`w-12 h-12 sm:w-14 sm:h-14 shrink-0 flex items-center justify-center rounded-full transition shadow-md ${
+                        isMicOn ? "bg-red-500 text-white animate-pulse" : "bg-gray-800 text-white hover:bg-black"
+                      }`}
+                      type="button"
+                      title={isMicOn ? "Mute Microphone" : "Unmute Microphone"}
+                    >
+                      {isMicOn ? <FaMicrophone size={20} /> : <FaMicrophoneSlash size={20} />}
+                    </motion.button>
 
-                  <motion.button
-                  onClick={submitAnswer}
-                  disabled={isSubmitting}
-                    whileTap={{ scale: 0.95 }}
-                    className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-500 text-white py-3 rounded-2xl shadow-lg hover:opacity-90 transition font-semibold disabled: bg-gray-500"
-                    type="button"
-                  >
-                   {isSubmitting ? "Submitting.....":"Submit Answer"}
-                  </motion.button>
-                </div>):(
+                    <motion.button
+                      onClick={submitAnswer}
+                      disabled={isSubmitting}
+                      whileTap={{ scale: 0.97 }}
+                      className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-700 hover:to-teal-600 text-white py-3 sm:py-3.5 px-4 rounded-xl sm:rounded-2xl shadow-md font-semibold text-sm sm:text-base transition disabled:opacity-50 disabled:cursor-not-allowed"
+                      type="button"
+                    >
+                      {isSubmitting ? "Submitting..." : "Submit Answer"}
+                    </motion.button>
+                  </div>
+                ) : (
                   <motion.div
-                    className="mt-6 bg-emerald-50 border border-emerald-200 p-5 rounded-2xl shadow-sm">
-                    <p className="text-emerald-700 font-medim mb-4 ">{feedback}</p>
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-emerald-50 border border-emerald-200 p-4 sm:p-5 rounded-2xl"
+                  >
+                    <p className="text-xs font-semibold text-emerald-800 uppercase tracking-wider mb-1">Feedback</p>
+                    <p className="text-emerald-900 text-sm sm:text-base font-medium mb-4 leading-relaxed">{feedback}</p>
                     <motion.button
                       type="button"
                       onClick={handleNext}
                       disabled={isAdvancing}
-                      whileHover={!isAdvancing ? { scale: 1.02 } : undefined}
+                      whileHover={!isAdvancing ? { scale: 1.01 } : undefined}
                       whileTap={!isAdvancing ? { scale: 0.98 } : undefined}
-                      className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 px-5 py-3.5 font-semibold text-white shadow-lg shadow-emerald-600/20 transition hover:from-emerald-700 hover:to-teal-600 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-300 disabled:cursor-wait disabled:opacity-70"
+                      className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 px-5 py-3 font-semibold text-white shadow-md hover:from-emerald-700 hover:to-teal-600 transition disabled:opacity-60"
                     >
                       {isAdvancing
                         ? "Loading..."
