@@ -10,8 +10,7 @@ import {
 import { useState } from 'react'
 import { useDispatch, useSelector } from "react-redux";
 import { setUserData } from "../redux/userSlice";
-
-const ServerUrl = 'http://localhost:8000'
+import { ServerUrl } from '../App.jsx'
 
 function Step1SetUp({onStart}) {
   const {userData}= useSelector((state)=>state.user);

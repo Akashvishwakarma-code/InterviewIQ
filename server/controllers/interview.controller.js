@@ -359,12 +359,20 @@ export const finishInterview = async (req, res) => {
         await interview.save();
 
         return res.status(200).json({
+            role: interview.role,
+            experience: interview.experience,
+            mode: interview.mode,
+            createdAt: interview.createdAt,
+            status: interview.status,
             finalScore: Number(finalScore.toFixed(1)),
             confidence: Number(avgConfidence.toFixed(1)),
             communication: Number(avgCommunication.toFixed(1)),
             correctness: Number(avgCorrectness.toFixed(1)),
             questionWiseScore: interview.questions.map((q) => ({
                 question: q.question,
+                answer: q.answer || "",
+                difficulty: q.difficulty || "",
+                timeLimit: q.timeLimit || 0,
                 score: q.score || 0,
                 feedback: q.feedback || "",
                 confidence: q.confidence || 0,
@@ -431,11 +439,26 @@ export const getInterviewReport = async (req,res) => {
             : 0;
 
         return res.json({
+            role: interview.role,
+            experience: interview.experience,
+            mode: interview.mode,
+            createdAt: interview.createdAt,
+            status: interview.status,
             finalScore: interview.finalScore,
             confidence: Number(avgConfidence.toFixed(1)),
             communication: Number(avgCommunication.toFixed(1)),
             correctness: Number(avgCorrectness.toFixed(1)),
-            questionWiseScore: interview.questions
+            questionWiseScore: interview.questions.map((q) => ({
+                question: q.question,
+                answer: q.answer || "",
+                difficulty: q.difficulty || "",
+                timeLimit: q.timeLimit || 0,
+                score: q.score || 0,
+                feedback: q.feedback || "",
+                confidence: q.confidence || 0,
+                communication: q.communication || 0,
+                correctness: q.correctness || 0,
+            }))
         });
 
     }catch(error){

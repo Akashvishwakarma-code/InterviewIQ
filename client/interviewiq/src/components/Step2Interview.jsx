@@ -6,8 +6,7 @@ import { motion } from "motion/react"
 import { FaMicrophone, FaMicrophoneSlash } from "react-icons/fa"
 import {BsArrowRight} from "react-icons/bs"
 import axios from "axios";
-
-const ServerUrl = "http://localhost:8000"
+import { ServerUrl } from '../App.jsx';
 
 function Step2Interview({ interviewData, onFinish }) {
   const questions = interviewData?.questions || []

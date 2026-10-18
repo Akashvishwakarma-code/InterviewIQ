@@ -3,14 +3,13 @@ import Home from './pages/Home.jsx'
 import Auth from './pages/Auth.jsx'
 import { useEffect } from 'react'
 import axios from "axios"
-import InterviewPage from "../src/pages/InterviewPage.jsx"
+import InterviewPage from "./pages/InterviewPage.jsx"
 import InterviewHistory from './pages/InterviewHistory.jsx'
 import InterviewReport from './pages/InterviewReport.jsx'
-import Pricing from './pages/pricing.jsx'
+import Pricing from './pages/Pricing.jsx'
 import { useDispatch } from 'react-redux'
 import { setUserData } from "./redux/userSlice.js"
-export const ServerUrl = "https://interviewiq-ak.onrender.com"
-
+export const ServerUrl = import.meta.env.VITE_SERVER_URL || "https://interviewiq-ak.onrender.com"
 function App() {
   const dispatch =useDispatch()
   useEffect(()=>{
