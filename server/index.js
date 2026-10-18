@@ -20,16 +20,18 @@ const PORT = process.env.PORT || 8000;
 
 const allowedOrigins = [
     "http://localhost:5173",
+    "https://interviewiq-ak.vercel.app",
     process.env.CLIENT_URL
 ].filter(Boolean);
 
 app.use(cors({
     origin: (origin, callback) => {
         if (!origin) return callback(null, true);
+        const cleanOrigin = origin.replace(/\/$/, "");
         if (
-            allowedOrigins.includes(origin) ||
-            origin.endsWith(".vercel.app") ||
-            origin.includes("localhost")
+            allowedOrigins.some(o => o.replace(/\/$/, "") === cleanOrigin) ||
+            cleanOrigin.endsWith(".vercel.app") ||
+            cleanOrigin.includes("localhost")
         ) {
             return callback(null, true);
         }
